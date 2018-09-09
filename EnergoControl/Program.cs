@@ -1,22 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace EnergoControl
 {
     static class Program
     {
+        // Власов Виктор 
         /// <summary>
         /// Главная точка входа для приложения.
         /// </summary>
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmMain());
+                if (System.Diagnostics.Process.GetProcessesByName(Application.ProductName).Length > 1)
+                {
+                    MessageBox.Show("Приложение уже запущено");
+                }
+                else
+                {
+                    License Check = new License();
+                    if (Check.CheckExistSettingsDat())
+                    {
+                        Application.EnableVisualStyles();
+                        Application.SetCompatibleTextRenderingDefault(false);
+                        Application.Run(new frmMain());
+                    }
+                }
         }
     }
 }

@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>EnergoControl</RootNamespace>
     <AssemblyName>EnergoControl</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,57 +33,35 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Iconsmind-Outline-Electricity.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ClosedXML, Version=0.91.0.0, Culture=neutral, PublicKeyToken=fd1eb21b62ae805b, processorArchitecture=MSIL">
-      <HintPath>..\packages\ClosedXML.0.91.0\lib\net452\ClosedXML.dll</HintPath>
-    </Reference>
-    <Reference Include="DocumentFormat.OpenXml, Version=2.8.1.0, Culture=neutral, PublicKeyToken=8fb06cb64d019a17, processorArchitecture=MSIL">
-      <HintPath>..\packages\DocumentFormat.OpenXml.2.8.1\lib\net40\DocumentFormat.OpenXml.dll</HintPath>
-    </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
-    <Reference Include="ExcelNumberFormat, Version=1.0.3.0, Culture=neutral, PublicKeyToken=23c6f5d73be07eca, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelNumberFormat.1.0.3\lib\net20\ExcelNumberFormat.dll</HintPath>
-    </Reference>
-    <Reference Include="FastMember.Signed, Version=0.0.0.0, Culture=neutral, PublicKeyToken=9e8f22703bef9a29, processorArchitecture=MSIL">
-      <HintPath>..\packages\FastMember.Signed.1.2.0\lib\net45\FastMember.Signed.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AddCounter.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="AddCounter.Designer.cs">
-      <DependentUpon>AddCounter.cs</DependentUpon>
-    </Compile>
     <Compile Include="AmountCounter.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="AmountCounter.Designer.cs">
       <DependentUpon>AmountCounter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Counter.cs">
-      <DependentUpon>ModelDataBase.tt</DependentUpon>
     </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -91,21 +70,7 @@
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="InterrogationСounter.cs" />
-    <Compile Include="ModelDataBase.Context.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>ModelDataBase.Context.tt</DependentUpon>
-    </Compile>
-    <Compile Include="ModelDataBase.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>ModelDataBase.tt</DependentUpon>
-    </Compile>
-    <Compile Include="ModelDataBase.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>ModelDataBase.edmx</DependentUpon>
-    </Compile>
+    <Compile Include="License.cs" />
     <Compile Include="NewCounter.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -114,20 +79,25 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SelectCounters.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SelectCounters.Designer.cs">
+      <DependentUpon>SelectCounters.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Serialization.cs" />
     <Compile Include="SettingsCounters.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="SettingsCounters.Designer.cs">
       <DependentUpon>SettingsCounters.cs</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="AddCounter.resx">
-      <DependentUpon>AddCounter.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="AmountCounter.resx">
       <DependentUpon>AmountCounter.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="NewCounter.resx">
       <DependentUpon>NewCounter.cs</DependentUpon>
@@ -142,19 +112,13 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="SelectCounters.resx">
+      <DependentUpon>SelectCounters.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SettingsCounters.resx">
       <DependentUpon>SettingsCounters.cs</DependentUpon>
     </EmbeddedResource>
-    <EntityDeploy Include="ModelDataBase.edmx">
-      <Generator>EntityModelCodeGenerator</Generator>
-      <LastGenOutput>ModelDataBase.Designer.cs</LastGenOutput>
-    </EntityDeploy>
-    <None Include="ModelDataBase.edmx.diagram">
-      <DependentUpon>ModelDataBase.edmx</DependentUpon>
-    </None>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -166,7 +130,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Hopstarter-Soft-Scraps-Button-Blank-Green.ico" />
@@ -196,17 +162,9 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ModelDataBase.Context.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>ModelDataBase.Context.cs</LastGenOutput>
-      <DependentUpon>ModelDataBase.edmx</DependentUpon>
-    </Content>
-    <Content Include="ModelDataBase.edmx.sql" />
-    <Content Include="ModelDataBase.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>ModelDataBase.cs</LastGenOutput>
-      <DependentUpon>ModelDataBase.edmx</DependentUpon>
-    </Content>
+    <Content Include="Iconsmind-Outline-Electricity.ico" />
+    <None Include="Resources\images.png" />
+    <None Include="Resources\1157958c2761469.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

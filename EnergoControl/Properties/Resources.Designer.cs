@@ -63,6 +63,16 @@ namespace EnergoControl.Properties {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _1157958c2761469 {
+            get {
+                object obj = ResourceManager.GetObject("1157958c2761469", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap _32_0342 {
             get {
                 object obj = ResourceManager.GetObject("32-0342", resourceCulture);
@@ -106,6 +116,16 @@ namespace EnergoControl.Properties {
         internal static System.Drawing.Bitmap Hopstarter_Soft_Scraps_Button_Blank_Green {
             get {
                 object obj = ResourceManager.GetObject("Hopstarter-Soft-Scraps-Button-Blank-Green", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap images {
+            get {
+                object obj = ResourceManager.GetObject("images", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

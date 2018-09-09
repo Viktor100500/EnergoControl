@@ -22,16 +22,5 @@ namespace EnergoControl.Properties {
                 return defaultInstance;
             }
         }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=DESKTOP-EVVHRUD\\MSQL;Initial Catalog=CounterStorage;Integrated Securi" +
-            "ty=True")]
-        public string CounterStorageConnectionString {
-            get {
-                return ((string)(this["CounterStorageConnectionString"]));
-            }
-        }
     }
 }

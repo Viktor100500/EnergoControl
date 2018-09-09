@@ -1,31 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace EnergoControl
 {
-    public delegate void DelegateWriteCurAndVol(string A, int B); // Делегат записи результатов
-    public delegate void DelegateWriteException(); // Делегат записи ошибки
+    public delegate void DelegateWriteCurAndVol(double[,] WhatWrite, int Index); // Делегат для многопоточной записи значений на форму
+    public delegate void DelegateWriteException(); // Делегат для многопоточной записи значений на форму
 
     public partial class NewCounter : Form
     {
-        Label[,] CurAndVol = new Label[2, 3]; // Установка надписей для таблицы текущих токов и напряжений на каждой фазе
-        Label[,] MaxAndMin = new Label[3, 4]; // Установка надписей для таблиц максимальных и минимальных значений тока и напряжения для каждой фазы
+        private const int MaxPoint = 150; // Ограничение количества хранимых значений
+        private TextBox Accident;
 
-        public NewCounter() // Создание формы для счетчика 
+        public double[] SettingAccident { get; set; } // Свойство
+
+        public NewCounter() // Конструктор создания формы для счетчика 
         {
             InitializeComponent();
-            SetLabels();
         }
 
-        public NewCounter(string NameC) // Создание формы для счетчика 
+        public NewCounter(string NameC, TextBox A) // Конструктор создания формы для счетчика с именем 
         {
             InitializeComponent();
             Text = "Счетчик " + NameC;
@@ -33,130 +26,174 @@ namespace EnergoControl
             TopLevel = false;
             Dock = DockStyle.Fill;
             Show();
-            SetLabels();
+
+            SettingAccident = new double[2]; // Установка настроек сообщений об авриях
+            SettingAccident[0] = 207; // Минимальное значение
+            SettingAccident[1] = 253; // Максимальное значение
+            Accident = A; // Передаем текст бокс с авариями
         }
 
-        public void SetLabels() // Создание масссива надписей на форме 
+        public void SetSetiings(double Min, double Max) // Установка настроек аварий 
         {
-            CurAndVol[0, 0] = ACurrent;
-            CurAndVol[0, 1] = BCurrent;
-            CurAndVol[0, 2] = CCurrent;
-            CurAndVol[1, 0] = AVoltage;
-            CurAndVol[1, 1] = BVoltage;
-            CurAndVol[1, 2] = CVoltage;
-
-            MaxAndMin[0, 0] = AMaxCurrent;
-            MaxAndMin[0, 1] = AMinCurrent;
-            MaxAndMin[0, 2] = AMaxVoltage;
-            MaxAndMin[0, 3] = AMinVoltage;
-
-            MaxAndMin[1, 0] = CMaxCurrent;
-            MaxAndMin[1, 1] = CMinCurrent;
-            MaxAndMin[1, 2] = CMaxVoltage;
-            MaxAndMin[1, 3] = CMinVoltage;
-
-            MaxAndMin[2, 0] = BMaxCurrent;
-            MaxAndMin[2, 1] = BMinCurrent;
-            MaxAndMin[2, 2] = BMaxVoltage;
-            MaxAndMin[2, 3] = BMinVoltage;
-
+            SettingAccident[1] = Min;
+            SettingAccident[0] = Max;
         }
 
-        public Label[,] GetLabelCurAndVol() // Доступ к массиву класса 
+        public void WriteIndications(double[,] WhatWrite, int CurOrVolOrCos) // Функция заполнения показателей 
         {
-            return CurAndVol;
-        }
-
-        public void WriteVoltageorCurrent(string WhatParse, int CurrentIndex) // Фукнций записи текущих показаний напряжения и тока 
-        {
-            try
+            switch (CurOrVolOrCos)
             {
-                WhatParse = WhatParse.Replace('.', ',');
-                int start = WhatParse.IndexOf('(') + 1;
-                int end = WhatParse.IndexOf(')');
-                for (int j = 0; j < 3; j++)
-                {
-                    CurAndVol[CurrentIndex, j].Text = WhatParse.Substring(start, end - start);
-                    WhatParse = WhatParse.Substring(end + 1);
-                    start = WhatParse.IndexOf('(') + 1;
-                    end = WhatParse.IndexOf(')');
-                }
-
-
-                if (CurrentIndex == 1) // Заполняем график мощности
-                {
-                    try
+                case 0:
+                    ACurrent.Text = WhatWrite[0, 0].ToString();
+                    BCurrent.Text = WhatWrite[0, 1].ToString();
+                    CCurrent.Text = WhatWrite[0, 2].ToString();
+                    break;
+                case 1:
+                    AVoltage.Text = WhatWrite[1, 0].ToString();
+                    BVoltage.Text = WhatWrite[1, 1].ToString();
+                    CVoltage.Text = WhatWrite[1, 2].ToString();
+                    CheckAccident(WhatWrite); // Проверяем аварии
+                    break;
+                case 2:
+                    if (ChartPower.Series[0].Points.Count > MaxPoint) // Проверяем требуется ли удалять точки в графике и сообщения в textbox
                     {
-                        ChartPower.Series["Фаза А"].Points.AddXY(DateTime.Now, Double.Parse(ACurrent.Text) * Double.Parse(AVoltage.Text));
-                        ChartPower.Series["Фаза B"].Points.AddXY(DateTime.Now, Double.Parse(BCurrent.Text) * Double.Parse(BVoltage.Text));
-                        ChartPower.Series["Фаза С"].Points.AddXY(DateTime.Now, Double.Parse(CCurrent.Text) * Double.Parse(CVoltage.Text));
-                        if (!MaxAndMin[0, 0].Visible) { VisibleMaxMin(); }
-                        WriteNewMaxAndMin(Double.Parse(ACurrent.Text), Double.Parse(AVoltage.Text), 0);
-                        WriteNewMaxAndMin(Double.Parse(BCurrent.Text), Double.Parse(BVoltage.Text), 1);
-                        WriteNewMaxAndMin(Double.Parse(CCurrent.Text), Double.Parse(CVoltage.Text), 2);
+                        SetPointWithDel(WhatWrite);
                     }
-                    catch
+                    else
                     {
-                        WriteException();
+                        SetPoint(WhatWrite);
                     }
-                }
+
+                    if (AMaxCurrent.Visible == false) { VisibleMaxMin(); }
+                    WriteNewMaxAndMin(WhatWrite, 0);
+                    WriteNewMaxAndMin(WhatWrite, 1);
+                    WriteNewMaxAndMin(WhatWrite, 2);
+                    break;
             }
-            catch
-            {
-                WriteException();
-            }
+        }
+
+        void VisibleMaxMin() // Видимость максимальных и минимальных значений 
+        {
+            AMaxCurrent.Visible = true;
+            AMinCurrent.Visible = true;
+            AMaxVoltage.Visible = true;
+            AMinVoltage.Visible = true;
+
+            BMaxCurrent.Visible = true;
+            BMinCurrent.Visible = true;
+            BMaxVoltage.Visible = true;
+            BMinVoltage.Visible = true;
+
+            CMaxCurrent.Visible = true;
+            CMinCurrent.Visible = true;
+            CMaxVoltage.Visible = true;
+            CMinVoltage.Visible = true;
         }
 
         public void WriteException() // Заполнение лога ошибкой 
         {
             LogBox.Text += "Неудачный опрос " + DateTime.Now + Environment.NewLine;
+            LogBox.ScrollToCaret();
         }
 
-        public void WriteGoodEnd() // Заполнение лога удачей 
+        void WriteNewMaxAndMin(double[,] Indications, int i) // Устновка максимальных и минимальных значений 
         {
-            LogBox.Text += "Удачный опрос " + DateTime.Now + Environment.NewLine;
+            switch (i)
+            {
+                case 0: // Сравнение фазы А
+                    if (Indications[0, 0] < Double.Parse(AMinCurrent.Text))
+                    {
+                        AMinCurrent.Text = Indications[0, 0].ToString();
+                    }
+                    if (Indications[0, 0] > Double.Parse(AMaxCurrent.Text))
+                    {
+                        AMaxCurrent.Text = Indications[0, 0].ToString();
+                    }
+                    if (Indications[1, 0] < Double.Parse(AMinVoltage.Text))
+                    {
+                        AMinVoltage.Text = Indications[1, 0].ToString();
+                    }
+                    if (Indications[1, 0] > Double.Parse(AMaxVoltage.Text))
+                    {
+                        AMaxVoltage.Text = Indications[1, 0].ToString();
+                    }
+                    break;
+                case 1: // Сравнение фазы B
+                    if (Indications[0, 1] < Double.Parse(BMinCurrent.Text))
+                    {
+                        BMinCurrent.Text = Indications[0, 1].ToString();
+                    }
+                    if (Indications[0, 1] > Double.Parse(BMaxCurrent.Text))
+                    {
+                        BMaxCurrent.Text = Indications[0, 1].ToString();
+                    }
+                    if (Indications[1, 1] < Double.Parse(BMinVoltage.Text))
+                    {
+                        BMinVoltage.Text = Indications[1, 1].ToString();
+                    }
+                    if (Indications[1, 1] > Double.Parse(BMaxVoltage.Text))
+                    {
+                        BMaxVoltage.Text = Indications[1, 1].ToString();
+                    }
+                    break;
+                case 2: // Сравнение фазы C
+                    if (Indications[0, 2] < Double.Parse(CMinCurrent.Text))
+                    {
+                        CMinCurrent.Text = Indications[0, 2].ToString();
+                    }
+                    if (Indications[0, 2] > Double.Parse(CMaxCurrent.Text))
+                    {
+                        CMaxCurrent.Text = Indications[0, 2].ToString();
+                    }
+                    if (Indications[1, 2] < Double.Parse(CMinVoltage.Text))
+                    {
+                        CMinVoltage.Text = Indications[1, 2].ToString();
+                    }
+                    if (Indications[1, 2] > Double.Parse(CMaxVoltage.Text))
+                    {
+                        CMaxVoltage.Text = Indications[1, 2].ToString();
+                    }
+                    break;
+            }
         }
 
-        public void WriteNewMaxAndMin(Double Current, Double Voltage, int i) // Устновка максимальных и минимальных значений 
+        void SetPoint(double[,] WhatWrite) // Добавление точек на график 
         {
-            //MaxAndMin[i, 0] = AMaxCurrent;
-            //MaxAndMin[i, 1] = AMinCurrent;
-            //MaxAndMin[i, 2] = AMaxVoltage;
-            //MaxAndMin[i, 3] = AMinVoltage;
-            if (Double.Parse(MaxAndMin[i, 0].Text) < Current)
-            {
-                MaxAndMin[i, 0].Text = Current.ToString();
-            }
-            if (Double.Parse(MaxAndMin[i, 1].Text) > Current)
-            {
-                MaxAndMin[i, 1].Text = Current.ToString();
-            }
-            if (Double.Parse(MaxAndMin[i, 2].Text) < Voltage)
-            {
-                MaxAndMin[i, 2].Text = Voltage.ToString();
-            }
-            if (Double.Parse(MaxAndMin[i, 3].Text) > Voltage)
-            {
-                MaxAndMin[i, 3].Text = Voltage.ToString();
-            }
+            LogBox.Text += DateTime.Now + " Удачный опрос " + Environment.NewLine;
+            ChartPower.Series["Фаза А"].Points.AddXY(DateTime.Now, WhatWrite[0, 0] * WhatWrite[1, 0] * WhatWrite[2, 0]);
+            ChartPower.Series["Фаза B"].Points.AddXY(DateTime.Now, WhatWrite[0, 1] * WhatWrite[1, 1] * WhatWrite[2, 1]);
+            ChartPower.Series["Фаза С"].Points.AddXY(DateTime.Now, WhatWrite[0, 2] * WhatWrite[1, 2] * WhatWrite[2, 2]);
+            LogBox.ScrollToCaret();
         }
 
-        public void VisibleMaxMin() // Появление максимальных и минимальных значений 
+        void SetPointWithDel(double[,] WhatWrite) // Добавление точек на график с удалением 
         {
-            MaxAndMin[0, 0].Visible = true;
-            MaxAndMin[0, 1].Visible = true;
-            MaxAndMin[0, 2].Visible = true;
-            MaxAndMin[0, 3].Visible = true;
+            LogBox.Lines[0].Remove(0);
+            LogBox.Text += DateTime.Now + " Удачный опрос " + Environment.NewLine;
+            ChartPower.Series["Фаза А"].Points.RemoveAt(0);
+            ChartPower.Series["Фаза А"].Points.AddXY(DateTime.Now, WhatWrite[0, 0] * WhatWrite[1, 0] * WhatWrite[2, 0]);
+            ChartPower.Series["Фаза B"].Points.RemoveAt(0);
+            ChartPower.Series["Фаза B"].Points.AddXY(DateTime.Now, WhatWrite[0, 1] * WhatWrite[1, 1] * WhatWrite[2, 1]);
+            ChartPower.Series["Фаза С"].Points.RemoveAt(0);
+            ChartPower.Series["Фаза С"].Points.AddXY(DateTime.Now, WhatWrite[0, 2] * WhatWrite[1, 2] * WhatWrite[2, 2]);
+            ChartPower.ResetAutoValues();
+            LogBox.ScrollToCaret();
+        }
 
-            MaxAndMin[1, 0].Visible = true;
-            MaxAndMin[1, 1].Visible = true;
-            MaxAndMin[1, 2].Visible = true;
-            MaxAndMin[1, 3].Visible = true;
-
-            MaxAndMin[2, 0].Visible = true;
-            MaxAndMin[2, 1].Visible = true;
-            MaxAndMin[2, 2].Visible = true;
-            MaxAndMin[2, 3].Visible = true;
+        void CheckAccident(double[,] WhatWrite) // Проверка напряжения на аварии 
+        {
+            if (WhatWrite[1, 0] < SettingAccident[0] || WhatWrite[1, 0] > SettingAccident[1])
+            {
+                Accident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе А = " + WhatWrite[1, 0] + Environment.NewLine + Environment.NewLine;
+            }
+            if (WhatWrite[1, 1] < SettingAccident[0] || WhatWrite[1, 1] > SettingAccident[1])
+            {
+                Accident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе B = " + WhatWrite[1, 1] + Environment.NewLine + Environment.NewLine;
+            }
+            if (WhatWrite[1, 2] < SettingAccident[0] || WhatWrite[1, 2] > SettingAccident[1])
+            {
+                Accident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе C = " + WhatWrite[1, 2] + Environment.NewLine + Environment.NewLine;
+            }
         }
     }
 }

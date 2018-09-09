@@ -1,95 +1,103 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Diagnostics;
 using System.IO.Ports;
 using System.Threading;
-using DocumentFormat.OpenXml.Drawing;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Color = System.Drawing.Color;
 
 namespace EnergoControl
 {
     public partial class frmMain : Form
     {
         #region Переменные
+
         InterrogationСounter _Work; // Рабочий класс опроса
         private bool WorkOn = false; // Флаг работы опроса
+
         #endregion
 
         #region Работа кнопок
+
         private void выходToolStripMenuItem_Click(object sender, EventArgs e) // Кнопка выхода из программы 
         {
             Close();
         }
-        private async void toolStripButton1_Click(object sender, EventArgs e)  // Запуск опроса 
+
+        private async void toolStripButton1_Click(object sender, EventArgs e)  // ЗАПУСК ОПРОСА 
         {
             if (LabelPort.Text != "null") // Проверяем что порт установлен
             {
-                toolStripLabel3.Text = "Опрос счетчиков включен"; // Меняем флаги
-                notifyIcon1.Text = "Контроль электроэнергии[ВКЛ]";
-                toolStripLabel3.ForeColor = Color.Green;
-                toolStripButton1.Enabled = false;
-                toolStripButton2.Enabled = true;
-                NewCounter[] ChildF = new NewCounter[CounterPage.TabCount - 1];
-                WorkOn = true;
-                for (int i = 0; i < CounterPage.TabCount - 1; i++)
+                if (CounterPage.TabCount != 1)
                 {
-                    ChildF[i] = (NewCounter)CounterPage.TabPages[i].Controls[0];
+                    toolStripLabel3.Text = "Опрос счетчиков включен"; // Меняем флаги
+                    notifyIcon1.Text = "Контроль электроэнергии[ВКЛ]";
+                    toolStripLabel3.ForeColor = Color.Green;
+                    toolStripButton1.Enabled = false;
+                    toolStripButton2.Enabled = true;
+                    NewCounter[] ChildF = new NewCounter[CounterPage.TabCount - 1];
+                    WorkOn = true; // Меняем флаг работы опроса
+                    for (int i = 1; i < CounterPage.TabCount; i++)
+                    {
+                        ChildF[i-1] = (NewCounter)CounterPage.TabPages[i].Controls[0];
+                    }
+
+                    _Work = new InterrogationСounter(LabelPort.Text);
+                    await Task.Factory.StartNew(() => _Work.Request(ChildF,
+                        (AmountCounter)CounterPage.TabPages[0].Controls[0]));
                 }
-                _Work = new InterrogationСounter(LabelPort.Text);
-                await Task.Factory.StartNew(() => _Work.Request(ChildF));
+                else
+                {
+                    MessageBox.Show("Нет счетчиков в очереди на опрос", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             else
             {
                 PortProperties();
-                MessageBox.Show("Повторите попытку запуска", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Повторите попытку запуска, установлен не подходящий порт", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void toolStripButton2_Click(object sender, EventArgs e) // Кнопка стоп 
         {
             toolStripLabel3.Text = "Опрос счетчиков отключен"; // Меняем флаги
             notifyIcon1.Text = "Контроль электроэнергии[ВЫКЛ]";
             toolStripLabel3.ForeColor = Color.Red;
-            toolStripButton1.Enabled = true;
             toolStripButton2.Enabled = false;
+            Thread.Sleep(600);
+            toolStripButton1.Enabled = true;
             _Work.Cancel(); // Отменяем выполнение опроса
             Task.WaitAll(); // Ждем окончания
-            WorkOn = false;
+            WorkOn = false; // Меняем флаг работы опроса
         }
-        private void toolStripMenuItem1_Click(object sender, EventArgs e) // Добавить новый счетчик 
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e) // Выбрать счетчики для опроса 
         {
-            if (CounterPage.TabCount - 1 < 10) // ПРОГРАММА НА 10 счетчиков!
+            if (WorkOn)
             {
-                if (WorkOn)
-                {
-                    toolStripButton2_Click(sender, e); // Останавливаем опрос
-                }
-                Enabled = false;
-                AddCounter D = new AddCounter(CounterPage, this);
-                D.Show();
+                toolStripButton2_Click(sender, e); // Останавливаем опрос
             }
-            else
-            {
-                MessageBox.Show("Количество счетчиков не может превышать 10", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            Enabled = false;
+            SelectCounters Select = new SelectCounters(CounterPage);
+            Select.Owner = this;
+            Select.Show();
         }
+
         private void свернутьВТрейToolStripMenuItem_Click(object sender, EventArgs e) // Кнопка ухода в трей 
         {
             ShowInTaskbar = false;
             notifyIcon1.Visible = true;
             Hide();
         }
+
         private void notifyIcon1_DoubleClick(object sender, EventArgs e) // Возвращение из трея 
         {
             Show();
             ShowInTaskbar = true;
             notifyIcon1.Visible = false;
         }
-        private void настройкиСчетчиковToolStripMenuItem_Click(object sender, EventArgs e) // Открытие настроек счетчика
+
+        private void настройкиСчетчиковToolStripMenuItem_Click(object sender, EventArgs e) // Открытие настроек счетчика 
         {
             if (WorkOn)
             {
@@ -99,6 +107,22 @@ namespace EnergoControl
             SettingsCounters Change = new SettingsCounters(CounterPage, this);
             Change.Show();
         }
+
+        private void ClearAccident_Click(object sender, EventArgs e) // Очистить Аварии 
+        {
+            TextBoxAccident.Clear();
+        }
+
+        private void создатьToolStripMenuItem_Click(object sender, EventArgs e) // Открыть генератор отчетов 
+        {
+            try
+            {
+                Process.Start("CreateReport.exe");
+            }
+            catch { }
+
+        }
+
         #endregion
 
         #region Счетчики Инкаба
@@ -110,17 +134,15 @@ namespace EnergoControl
 
         void CountersInkab() // Заготовка форм счетчиков для Инкаба 
         {
-            //AddNewCounter(new NewCounter("1"));
-            //AddNewCounter(new NewCounter("2"));
-            //AddNewCounter(new NewCounter("3"));
-            //AddNewCounter(new NewCounter("4"));
-            //AddNewCounter(new NewCounter("5"));
-            //AddNewCounter(new NewCounter("6"));
-            //AddNewCounter(new NewCounter("7"));
-            //AddNewCounter(new NewCounter("8"));
-            //AddNewCounter(new NewCounter("9"));
-            //AddNewCounter(new NewCounter("10"));
-            AddNewCounter(new AmountCounter());
+            AddNewCounter(new AmountCounter()); // Суммирующий график мощностей
+            AddNewCounter(new NewCounter("1", TextBoxAccident));
+            AddNewCounter(new NewCounter("2", TextBoxAccident));
+            AddNewCounter(new NewCounter("3", TextBoxAccident));
+            AddNewCounter(new NewCounter("4", TextBoxAccident));
+            AddNewCounter(new NewCounter("5", TextBoxAccident));
+            AddNewCounter(new NewCounter("6", TextBoxAccident));
+            AddNewCounter(new NewCounter("7", TextBoxAccident));
+            AddNewCounter(new NewCounter("8", TextBoxAccident));
         }
 
         #endregion
@@ -172,22 +194,35 @@ namespace EnergoControl
             }
         }
 
+        public TextBox GetTextBoxWithAccident() // Возвращает текст бокс с авариями 
+        {
+            return TextBoxAccident;
+        }
+
         #endregion
 
         #region Работа вкладок
 
         void AddNewCounter(NewCounter childFrm) // Добавление счетчика на вкладку 
         {
-            CounterPage.TabPages.Add(childFrm.Text);
+            CounterPage.TabPages.Add(childFrm.Name, childFrm.Text);
             childFrm.Parent = CounterPage.TabPages[CounterPage.TabCount - 1];
         }
 
         void AddNewCounter(AmountCounter childFrm) // Добавление суммарного на вкладку 
         {
             CounterPage.TabPages.Add(childFrm.Text);
-            childFrm.Parent = CounterPage.TabPages[CounterPage.TabCount - 1];
+            childFrm.Parent = CounterPage.TabPages[0];
         }
 
         #endregion
+
+        private void оПрограммеToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Task.Run(() =>
+            {
+                var dialogResult = MessageBox.Show("\"Энергоконтроль\", Версия 1.3 - 04.09.2018; ООО \"Энергоучет\", energouchet_uk@mail.ru", "О программе", MessageBoxButtons.OK);
+            });
+        }
     }
 }
