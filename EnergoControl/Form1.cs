@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using EnergoControl.Properties;
 using Color = System.Drawing.Color;
 
 namespace EnergoControl
@@ -14,6 +16,8 @@ namespace EnergoControl
 
         InterrogationСounter _Work; // Рабочий класс опроса
         private bool WorkOn = false; // Флаг работы опроса
+        CancellationTokenSource _tokenSource;
+        List<Task> tasks = new List<Task>();
 
         #endregion
 
@@ -24,27 +28,27 @@ namespace EnergoControl
             Close();
         }
 
-        private async void toolStripButton1_Click(object sender, EventArgs e)  // ЗАПУСК ОПРОСА 
+        private void toolStripButton1_Click(object sender, EventArgs e)  // ЗАПУСК ОПРОСА 
         {
             if (LabelPort.Text != "null") // Проверяем что порт установлен
             {
                 if (CounterPage.TabCount != 1)
                 {
-                    toolStripLabel3.Text = "Опрос счетчиков включен"; // Меняем флаги
-                    notifyIcon1.Text = "Контроль электроэнергии[ВКЛ]";
-                    toolStripLabel3.ForeColor = Color.Green;
+                    WorkOn = true; // Меняем флаг работы опроса
+                    SaveLatestPort.Save(LabelPort.Text); // Сохраняем порт в файл 
+                    WriteGoodWork();
                     toolStripButton1.Enabled = false;
                     toolStripButton2.Enabled = true;
+                    LabelPort.Enabled = false;
                     NewCounter[] ChildF = new NewCounter[CounterPage.TabCount - 1];
-                    WorkOn = true; // Меняем флаг работы опроса
                     for (int i = 1; i < CounterPage.TabCount; i++)
                     {
-                        ChildF[i-1] = (NewCounter)CounterPage.TabPages[i].Controls[0];
+                        ChildF[i - 1] = (NewCounter)CounterPage.TabPages[i].Controls[0];
                     }
 
                     _Work = new InterrogationСounter(LabelPort.Text);
-                    await Task.Factory.StartNew(() => _Work.Request(ChildF,
-                        (AmountCounter)CounterPage.TabPages[0].Controls[0]));
+                    tasks.Add(Task.Factory.StartNew(() => _Work.Request(ChildF,
+                        (AmountCounter)CounterPage.TabPages[0].Controls[0])));
                 }
                 else
                 {
@@ -54,33 +58,39 @@ namespace EnergoControl
             else
             {
                 PortProperties();
-                MessageBox.Show("Повторите попытку запуска, установлен не подходящий порт", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Проверьте подключение кабеля и соответствие наименования выбранного порта, повторите попытку запуска", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e) // Кнопка стоп 
+        private void toolStripButton2_Click(object sender, EventArgs e) // Кнопка СТОП 
         {
-            toolStripLabel3.Text = "Опрос счетчиков отключен"; // Меняем флаги
-            notifyIcon1.Text = "Контроль электроэнергии[ВЫКЛ]";
-            toolStripLabel3.ForeColor = Color.Red;
-            toolStripButton2.Enabled = false;
-            Thread.Sleep(600);
-            toolStripButton1.Enabled = true;
-            _Work.Cancel(); // Отменяем выполнение опроса
-            Task.WaitAll(); // Ждем окончания
-            WorkOn = false; // Меняем флаг работы опроса
+            InputPassword();
         }
 
         private void toolStripMenuItem1_Click(object sender, EventArgs e) // Выбрать счетчики для опроса 
         {
+            SelectCounters Select;
             if (WorkOn)
             {
-                toolStripButton2_Click(sender, e); // Останавливаем опрос
+                if (InputPassword())
+                {
+                    Enabled = false;
+                    Select = new SelectCounters(CounterPage);
+                    Select.Owner = this;
+                    Select.Show();
+                }
+                else
+                {
+                    return;
+                }
             }
-            Enabled = false;
-            SelectCounters Select = new SelectCounters(CounterPage);
-            Select.Owner = this;
-            Select.Show();
+            else
+            {
+                Enabled = false;
+                Select = new SelectCounters(CounterPage);
+                Select.Owner = this;
+                Select.Show();
+            }
         }
 
         private void свернутьВТрейToolStripMenuItem_Click(object sender, EventArgs e) // Кнопка ухода в трей 
@@ -99,13 +109,23 @@ namespace EnergoControl
 
         private void настройкиСчетчиковToolStripMenuItem_Click(object sender, EventArgs e) // Открытие настроек счетчика 
         {
+            SettingsCounters Change;
             if (WorkOn)
             {
-                toolStripButton2_Click(sender, e); // Останавливаем опрос
+                if (InputPassword())
+                {
+                    Enabled = false;
+                    Change = new SettingsCounters(CounterPage, this);
+                    Change.Show();
+                }
+                else return;
             }
-            Enabled = false;
-            SettingsCounters Change = new SettingsCounters(CounterPage, this);
-            Change.Show();
+            else
+            {
+                Enabled = false;
+                Change = new SettingsCounters(CounterPage, this);
+                Change.Show();
+            }
         }
 
         private void ClearAccident_Click(object sender, EventArgs e) // Очистить Аварии 
@@ -123,57 +143,12 @@ namespace EnergoControl
 
         }
 
-        #endregion
-
-        #region Счетчики Инкаба
-
-        private void frmMain_Load(object sender, EventArgs e) // Загрузка тестовых счетчиков 
+        private void оПрограммеToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            CountersInkab();
-        }
-
-        void CountersInkab() // Заготовка форм счетчиков для Инкаба 
-        {
-            AddNewCounter(new AmountCounter()); // Суммирующий график мощностей
-            AddNewCounter(new NewCounter("1", TextBoxAccident));
-            AddNewCounter(new NewCounter("2", TextBoxAccident));
-            AddNewCounter(new NewCounter("3", TextBoxAccident));
-            AddNewCounter(new NewCounter("4", TextBoxAccident));
-            AddNewCounter(new NewCounter("5", TextBoxAccident));
-            AddNewCounter(new NewCounter("6", TextBoxAccident));
-            AddNewCounter(new NewCounter("7", TextBoxAccident));
-            AddNewCounter(new NewCounter("8", TextBoxAccident));
-        }
-
-        #endregion
-
-        #region Работа с портом
-
-        public void PortProperties() // Установка надписи о текущем порте 
-        {
-            try
+            Task.Run(() =>
             {
-                LabelPort.Text = SerialPort.GetPortNames()[0];
-            }
-            catch
-            {
-                MessageBox.Show("Не найдено подходящих портов", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        public void PortPropertiesWithoutMessage() // Установка надписи о текущем порте 
-        {
-            try
-            {
-                LabelPort.Text = SerialPort.GetPortNames()[0];
-                for (int i = 0; i < SerialPort.GetPortNames().Length; i++)
-                {
-                    LabelPort.Items.Add(SerialPort.GetPortNames()[i]);
-                }
-            }
-            catch
-            {
-            }
+                var dialogResult = MessageBox.Show("\"Энергоконтроль\", Версия 1.4 - 13.09.2018; ООО \"Энергоучет\", energouchet_uk@mail.ru", "О программе", MessageBoxButtons.OK);
+            });
         }
 
         #endregion
@@ -183,20 +158,93 @@ namespace EnergoControl
         public frmMain() // Конструктор 
         {
             InitializeComponent();
-            PortPropertiesWithoutMessage();
+            PortProperties();
         }
 
         private void frmMain_FormClosing(object sender, FormClosingEventArgs e) // Когда форма закрывается 
         {
             if (WorkOn)
             {
-                Task.WaitAll();
+                _Work.Cancel();
+                Thread.Sleep(500);
             }
         }
 
         public TextBox GetTextBoxWithAccident() // Возвращает текст бокс с авариями 
         {
             return TextBoxAccident;
+        }
+
+        private void frmMain_Load(object sender, EventArgs e) // Заготовка форм счетчиков для Инкаба 
+        {
+            AddNewCounter(new AmountCounter()); // Суммирующий график мощностей
+            AddNewCounter(new NewCounter("1", this));
+            AddNewCounter(new NewCounter("2", this));
+            AddNewCounter(new NewCounter("3", this));
+            AddNewCounter(new NewCounter("4", this));
+            AddNewCounter(new NewCounter("5", this));
+            AddNewCounter(new NewCounter("6", this));
+            AddNewCounter(new NewCounter("7", this));
+            AddNewCounter(new NewCounter("8", this));
+            toolStripButton1_Click(null, new EventArgs());
+        }
+
+        public bool InputPassword() // Остановка опроса 
+        {
+            ControlStop Stop = new ControlStop();
+            Stop.ShowDialog();
+            if (Stop.DialogResult == DialogResult.OK)
+            {
+                _Work.Cancel();
+                WorkOn = false; // Меняем флаг работы опроса
+                toolStripLabel3.Text = "Опрос счетчиков отключен"; // Меняем флаги
+                notifyIcon1.Text = "Контроль электроэнергии[ВЫКЛ]";
+                notifyIcon1.Icon = Resources.IconStop;
+                toolStripLabel3.ForeColor = Color.Black;
+                toolStripButton2.Enabled = false;
+                LabelPort.Enabled = true;
+                toolStripButton1.Enabled = true;
+                return true;
+            }
+            return false;
+        }
+
+        public void PortProperties() // Установка надписи о текущем порте 
+        {
+            try
+            {
+                if (SaveLatestPort.Check()) // Пробуем взять из файла 
+                {
+                    LabelPort.Text = SaveLatestPort.Read();
+                }
+                else { LabelPort.Text = SerialPort.GetPortNames()[0]; } // Если нет устанавливаем существующие 
+            }
+            catch
+            {
+                LabelPort.Text = "null"; // Иначе 0
+            }
+        }
+
+        public void WriteException() // Установка надписи о разрыве связи 
+        {
+            if (WorkOn)
+            {
+                toolStripLabel3.Text = "НЕТ СВЯЗИ, ПРОВЕРЬТЕ КАБЕЛЬ"; // Меняем флаги
+                notifyIcon1.Text = "Контроль электроэнергии[НЕТ СВЯЗИ]";
+                notifyIcon1.Icon = Resources.IconException;
+                toolStripLabel3.ForeColor = Color.Red;
+            }
+        }
+
+        public void WriteGoodWork() // Установка надписи о хорошем соеднинении 
+        {
+            if (WorkOn)
+            {
+                toolStripLabel3.Text = "Опрос счетчиков включен"; // Меняем флаги
+                notifyIcon1.Text = "Контроль электроэнергии[ВКЛ]";
+                notifyIcon1.Icon = Resources.IconGood;
+                toolStripLabel3.ForeColor = Color.Green;
+            }
         }
 
         #endregion
@@ -216,13 +264,5 @@ namespace EnergoControl
         }
 
         #endregion
-
-        private void оПрограммеToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Task.Run(() =>
-            {
-                var dialogResult = MessageBox.Show("\"Энергоконтроль\", Версия 1.3 - 04.09.2018; ООО \"Энергоучет\", energouchet_uk@mail.ru", "О программе", MessageBoxButtons.OK);
-            });
-        }
     }
 }

@@ -268,9 +268,9 @@
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(18, 194);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(233, 20);
+            this.label3.Size = new System.Drawing.Size(273, 20);
             this.label3.TabIndex = 64;
-            this.label3.Text = "График мощности (U*I*Cos φ)";
+            this.label3.Text = "График мощности (U*I*Cos φ/1000)";
             // 
             // ChartPower
             // 
@@ -560,6 +560,7 @@
             this.LogBox.Size = new System.Drawing.Size(490, 139);
             this.LogBox.TabIndex = 65;
             this.LogBox.Text = "";
+            this.LogBox.TextChanged += new System.EventHandler(this.LogBox_TextChanged);
             // 
             // label2
             // 

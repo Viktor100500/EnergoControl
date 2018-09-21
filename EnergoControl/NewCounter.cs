@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace EnergoControl
@@ -9,7 +10,7 @@ namespace EnergoControl
     public partial class NewCounter : Form
     {
         private const int MaxPoint = 150; // Ограничение количества хранимых значений
-        private TextBox Accident;
+        private frmMain OwnerF;
 
         public double[] SettingAccident { get; set; } // Свойство
 
@@ -18,7 +19,7 @@ namespace EnergoControl
             InitializeComponent();
         }
 
-        public NewCounter(string NameC, TextBox A) // Конструктор создания формы для счетчика с именем 
+        public NewCounter(string NameC, frmMain OF) // Конструктор создания формы для счетчика с именем 
         {
             InitializeComponent();
             Text = "Счетчик " + NameC;
@@ -30,7 +31,8 @@ namespace EnergoControl
             SettingAccident = new double[2]; // Установка настроек сообщений об авриях
             SettingAccident[0] = 207; // Минимальное значение
             SettingAccident[1] = 253; // Максимальное значение
-            Accident = A; // Передаем текст бокс с авариями
+            OwnerF = OF;
+
         }
 
         public void SetSetiings(double Min, double Max) // Установка настроек аварий 
@@ -92,8 +94,8 @@ namespace EnergoControl
 
         public void WriteException() // Заполнение лога ошибкой 
         {
-            LogBox.Text += "Неудачный опрос " + DateTime.Now + Environment.NewLine;
-            LogBox.ScrollToCaret();
+            RichTextBoxExtensions.AppendText(LogBox, "НЕУДАЧНЫЙ ОПРОС! " + DateTime.Now + Environment.NewLine, Color.Red);
+            OwnerF.WriteException();
         }
 
         void WriteNewMaxAndMin(double[,] Indications, int i) // Устновка максимальных и минимальных значений 
@@ -159,24 +161,26 @@ namespace EnergoControl
 
         void SetPoint(double[,] WhatWrite) // Добавление точек на график 
         {
-            LogBox.Text += DateTime.Now + " Удачный опрос " + Environment.NewLine;
-            ChartPower.Series["Фаза А"].Points.AddXY(DateTime.Now, WhatWrite[0, 0] * WhatWrite[1, 0] * WhatWrite[2, 0]);
-            ChartPower.Series["Фаза B"].Points.AddXY(DateTime.Now, WhatWrite[0, 1] * WhatWrite[1, 1] * WhatWrite[2, 1]);
-            ChartPower.Series["Фаза С"].Points.AddXY(DateTime.Now, WhatWrite[0, 2] * WhatWrite[1, 2] * WhatWrite[2, 2]);
+            RichTextBoxExtensions.AppendText(LogBox, "Удачный опрос " + DateTime.Now + Environment.NewLine, Color.Black);
+            ChartPower.Series["Фаза А"].Points.AddXY(DateTime.Now, WhatWrite[0, 0] * WhatWrite[1, 0] * WhatWrite[2, 0] / 1000.00);
+            ChartPower.Series["Фаза B"].Points.AddXY(DateTime.Now, WhatWrite[0, 1] * WhatWrite[1, 1] * WhatWrite[2, 1] / 1000.00);
+            ChartPower.Series["Фаза С"].Points.AddXY(DateTime.Now, WhatWrite[0, 2] * WhatWrite[1, 2] * WhatWrite[2, 2] / 1000.00);
             LogBox.ScrollToCaret();
+            OwnerF.WriteGoodWork();
         }
 
         void SetPointWithDel(double[,] WhatWrite) // Добавление точек на график с удалением 
         {
             LogBox.Lines[0].Remove(0);
-            LogBox.Text += DateTime.Now + " Удачный опрос " + Environment.NewLine;
+            RichTextBoxExtensions.AppendText(LogBox, "Удачный опрос " + DateTime.Now + Environment.NewLine, Color.Black);
             ChartPower.Series["Фаза А"].Points.RemoveAt(0);
-            ChartPower.Series["Фаза А"].Points.AddXY(DateTime.Now, WhatWrite[0, 0] * WhatWrite[1, 0] * WhatWrite[2, 0]);
+            ChartPower.Series["Фаза А"].Points.AddXY(DateTime.Now, WhatWrite[0, 0] * WhatWrite[1, 0] * WhatWrite[2, 0] / 1000.00);
             ChartPower.Series["Фаза B"].Points.RemoveAt(0);
-            ChartPower.Series["Фаза B"].Points.AddXY(DateTime.Now, WhatWrite[0, 1] * WhatWrite[1, 1] * WhatWrite[2, 1]);
+            ChartPower.Series["Фаза B"].Points.AddXY(DateTime.Now, WhatWrite[0, 1] * WhatWrite[1, 1] * WhatWrite[2, 1] / 1000.00);
             ChartPower.Series["Фаза С"].Points.RemoveAt(0);
-            ChartPower.Series["Фаза С"].Points.AddXY(DateTime.Now, WhatWrite[0, 2] * WhatWrite[1, 2] * WhatWrite[2, 2]);
+            ChartPower.Series["Фаза С"].Points.AddXY(DateTime.Now, WhatWrite[0, 2] * WhatWrite[1, 2] * WhatWrite[2, 2] / 1000.00);
             ChartPower.ResetAutoValues();
+            LogBox.ScrollToCaret();
             LogBox.ScrollToCaret();
         }
 
@@ -184,16 +188,37 @@ namespace EnergoControl
         {
             if (WhatWrite[1, 0] < SettingAccident[0] || WhatWrite[1, 0] > SettingAccident[1])
             {
-                Accident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе А = " + WhatWrite[1, 0] + Environment.NewLine + Environment.NewLine;
+                OwnerF.TextBoxAccident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе А = " + WhatWrite[1, 0] + Environment.NewLine + Environment.NewLine;
             }
             if (WhatWrite[1, 1] < SettingAccident[0] || WhatWrite[1, 1] > SettingAccident[1])
             {
-                Accident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе B = " + WhatWrite[1, 1] + Environment.NewLine + Environment.NewLine;
+                OwnerF.TextBoxAccident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе B = " + WhatWrite[1, 1] + Environment.NewLine + Environment.NewLine;
             }
             if (WhatWrite[1, 2] < SettingAccident[0] || WhatWrite[1, 2] > SettingAccident[1])
             {
-                Accident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе C = " + WhatWrite[1, 2] + Environment.NewLine + Environment.NewLine;
+                OwnerF.TextBoxAccident.Text += DateTime.Now + Environment.NewLine + Text + " напряжение на фазе C = " + WhatWrite[1, 2] + Environment.NewLine + Environment.NewLine;
             }
+        }
+
+        private void LogBox_TextChanged(object sender, EventArgs e) // Скролинг событий вниз 
+        {
+            // set the current caret position to the end
+            LogBox.SelectionStart = LogBox.Text.Length;
+            // scroll it automatically
+            LogBox.ScrollToCaret();
+        }
+    }
+
+    public static class RichTextBoxExtensions // Класс дополнение к рич боксу 
+    {
+        public static void AppendText(this RichTextBox box, string text, Color color) // Изменение цвета вносимой строки 
+        {
+            box.SelectionStart = box.TextLength;
+            box.SelectionLength = 0;
+
+            box.SelectionColor = color;
+            box.AppendText(text);
+            box.SelectionColor = box.ForeColor;
         }
     }
 }

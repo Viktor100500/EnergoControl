@@ -18,16 +18,16 @@ namespace EnergoControl
 
         void SetPoint(double[] WhatWrite) // Добавление точек на график 
         {
-            ChartPower.Series["Полная мощность"].Points.AddXY(DateTime.Now, WhatWrite[0]);
-            ChartPower.Series["Активная мощность"].Points.AddXY(DateTime.Now, WhatWrite[1]);
+            ChartPower.Series["Полная мощность"].Points.AddXY(DateTime.Now, WhatWrite[0] / 1000.00);
+            ChartPower.Series["Активная мощность"].Points.AddXY(DateTime.Now, WhatWrite[1] / 1000.00);
         }
 
         void SetPointWithDel(double[] WhatWrite) // Добавление точек на график с удалением 
         {
             ChartPower.Series["Полная мощность"].Points.RemoveAt(0);
-            ChartPower.Series["Полная мощность"].Points.AddXY(DateTime.Now, WhatWrite[0]);
+            ChartPower.Series["Полная мощность"].Points.AddXY(DateTime.Now, WhatWrite[0] / 1000.00);
             ChartPower.Series["Активная мощность"].Points.RemoveAt(0);
-            ChartPower.Series["Активная мощность"].Points.AddXY(DateTime.Now, WhatWrite[1]);
+            ChartPower.Series["Активная мощность"].Points.AddXY(DateTime.Now, WhatWrite[1] / 1000.00);
             ChartPower.ResetAutoValues();
         }
 

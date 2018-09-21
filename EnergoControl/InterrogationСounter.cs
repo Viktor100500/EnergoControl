@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Ports;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using EnergoControl.Properties;
+using Color = System.Drawing.Color;
 
 namespace EnergoControl
 {
@@ -51,7 +56,7 @@ namespace EnergoControl
                         catch
                         {
                         }
-                        
+
                         Indications = new double[3, 3]; // Создаем новый массив показаний
                         Inquiry(Current[i].Name, Current[i]); // Делаем запрос и заполняем форму
                         Summation(ref Summary); // Суммируем результаты
@@ -120,6 +125,7 @@ namespace EnergoControl
                 DelegateWriteException D1 = Current.WriteException;
                 Current.Invoke(D1);
                 AllRequsted = false;
+                Thread.Sleep(500);
             }
         }
 
@@ -177,7 +183,7 @@ namespace EnergoControl
         {
             // 0 - полная мощность
             // 1 - активная мощность
-            Summa[1] += Indications[0, 0] * Indications[1, 0] * Indications[2, 0] + Indications[0, 1] * Indications[1, 1] * Indications[2, 1]+ Indications[0, 2] * Indications[1, 2] * Indications[2, 2]; // Активная мощность 
+            Summa[1] += Indications[0, 0] * Indications[1, 0] * Indications[2, 0] + Indications[0, 1] * Indications[1, 1] * Indications[2, 1] + Indications[0, 2] * Indications[1, 2] * Indications[2, 2]; // Активная мощность 
             Summa[0] += Indications[0, 0] * Indications[1, 0] + Indications[0, 1] * Indications[1, 1] + Indications[0, 2] * Indications[1, 2]; // Полная мощность
         }
 

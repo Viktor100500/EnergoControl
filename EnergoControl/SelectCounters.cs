@@ -43,7 +43,7 @@ namespace EnergoControl
                 {
                     if (!CheckAvailability(i+1))
                     {
-                        NewCounter childFrm = new NewCounter((i+1).ToString(), ((frmMain) Owner).GetTextBoxWithAccident());
+                        NewCounter childFrm = new NewCounter((i+1).ToString(), (frmMain) Owner);
                         _Counters.TabPages.Add(childFrm.Name, childFrm.Text);
                         childFrm.Parent = _Counters.TabPages[_Counters.TabCount - 1];
                     }

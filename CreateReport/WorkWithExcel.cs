@@ -234,8 +234,8 @@ namespace CreateReport
                 // Добавляем мощность 
                 if (SelectedData[3])
                 {
-                    Counter.Cells[32 + i, 11].FormulaR1C1 = "=RC2*RC3*RC4+RC5*RC6*RC7+RC8*RC9*RC10";
-                    Counter.Cells[32 + i, 12].FormulaR1C1 = "=RC2*RC3+RC5*RC6+RC8*RC9";
+                    Counter.Cells[32 + i, 11].FormulaR1C1 = "=(RC2*RC3*RC4+RC5*RC6*RC7+RC8*RC9*RC10)/1000";
+                    Counter.Cells[32 + i, 12].FormulaR1C1 = "=(RC2*RC3+RC5*RC6+RC8*RC9)/1000";
                 }
             }
         }
